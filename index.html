@@ -186,13 +186,36 @@ function chart(id,type,labels,values,label){
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:type==="doughnut"||type==="pie"}}}
   });
 }
+let joinedCache = null;
+
 function joinedCustomers(){
-  return data.customers.map(c=>{
-    const id=clean(get(c,"customer_id"));
-    const sub=data.subscriptions.find(s=>clean(get(s,"customer_id"))===id)||{};
-    const churn=data.churn.find(s=>clean(get(s,"customer_id"))===id)||{};
-    return {...c,_id:id,_plan:get(c,"plan"),_country:get(c,"country"),_industry:get(c,"industry"),_status:get(sub,"status")||get(churn,"churn_status"),_mrr:num(get(sub,"mrr")),_reason:get(churn,"churn_reason"),_failures:num(get(churn,"payment_failures"))};
+  if(joinedCache) return joinedCache;
+
+  const subscriptionsById = new Map(
+    data.subscriptions.map(s => [clean(get(s,"customer_id")), s])
+  );
+
+  const churnById = new Map(
+    data.churn.map(s => [clean(get(s,"customer_id")), s])
+  );
+
+  joinedCache = data.customers.map(c => {
+    const id = clean(get(c,"customer_id"));
+    const sub = subscriptionsById.get(id) || {};
+    const churn = churnById.get(id) || {};
+
+    return {
+      ...c,
+      _id: id,
+      _plan: get(c,"plan"),
+      _country: get(c,"country"),
+      _industry: get(c,"industry"),
+      _status: get(sub,"status") || get(churn,"churn_status"),
+      _mrr: num(get(sub,"mrr"))
+    };
   });
+
+  return joinedCache;
 }
 function selectedCustomers(){
   const country=document.getElementById("countryFilter")?.value||"";
@@ -237,10 +260,13 @@ function updateDashboard(){
   document.getElementById("revTotal").textContent=money(activeRevenue+churnRevenue);
   document.getElementById("revSubs").textContent=money(allSubs.length);
   chart("statusChart","doughnut",["Active","Churned"],[activeSubs.length,churnSubs.length],"Subscriptions");
-  chart("mrrPlanChart","bar",plans,plans.map(p=>allSubs.filter(s=>{
-    const customer=rows.find(c=>c._id===clean(get(s,"customer_id")));
-    return customer && customer._plan===p;
-  }).reduce((a,s)=>a+num(get(s,"mrr")),0)),"MRR");
+  const planByCustomerId = new Map(rows.map(c => [c._id, c._plan]));
+
+chart("mrrPlanChart", "bar", plans,
+  plans.map(p => allSubs
+    .filter(s => planByCustomerId.get(clean(get(s, "customer_id"))) === p)
+    .reduce((a, s) => a + num(get(s, "mrr")), 0)
+  ), "MRR");
 }
 function renderCustomers(){
   const search=document.getElementById("customerSearch").value.toLowerCase();
