@@ -4,78 +4,289 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SaaS Customer Churn & Retention Analytics</title>
+<title>SaaS Intelligence | Analytics Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f4f7fb;color:#172b4d}
-header{background:#0b1f3a;color:white;padding:65px 8%;text-align:center}
-header h1{font-size:38px;margin:0 0 15px}
-header p{color:#cbd5e1;font-size:17px}
-main{max-width:1100px;margin:35px auto;padding:0 20px}
-section{background:white;padding:28px;margin-bottom:24px;border-radius:12px;box-shadow:0 3px 14px #102b4d12}
-h2{color:#0b1f3a;margin-top:0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
-.kpi{background:#eef4fb;padding:22px;border-radius:10px}
-.kpi span{color:#52647b;font-size:14px}
-.kpi h3{font-size:30px;margin:10px 0 0;color:#0878d1}
-.pages li{padding:8px}
-.download{display:inline-block;background:#0878d1;color:white;padding:14px 22px;border-radius:7px;text-decoration:none;font-weight:bold}
-footer{text-align:center;padding:25px;background:#0b1f3a;color:#cbd5e1}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f7fb;color:#17243b}
+.sidebar{position:fixed;inset:0 auto 0 0;width:245px;background:#101d33;color:white;padding:25px 16px}
+.brand{font-size:19px;font-weight:800;padding:8px 12px 30px}
+.brand span{color:#55a6ff}
+.nav-label{font-size:11px;color:#8fa1bb;padding:15px 12px 8px;text-transform:uppercase;letter-spacing:1px}
+.nav button{width:100%;border:0;background:transparent;color:#c5d1e2;text-align:left;padding:13px 14px;border-radius:9px;margin:3px 0;cursor:pointer;font-size:14px}
+.nav button.active,.nav button:hover{background:#20395d;color:white}
+.main{margin-left:245px;padding:28px 34px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;gap:15px}
+.topbar h1{font-size:25px;margin:0}
+.muted{color:#71819a;font-size:13px;margin-top:7px}
+.status{background:#e4f8ed;color:#13844b;padding:8px 13px;border-radius:20px;font-size:12px}
+.page{display:none}.page.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:20px 0}
+.card,.panel{background:white;border:1px solid #e7edf5;border-radius:13px;padding:20px;box-shadow:0 4px 15px #19365b08}
+.kpi-label{color:#71819a;font-size:13px}
+.kpi-value{font-size:28px;font-weight:800;color:#0878d1;margin-top:12px}
+.panel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:18px 0}
+.panel h3{font-size:16px;margin:0 0 18px}
+.chart-wrap{height:280px;position:relative}
+.filters{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}
+input,select{border:1px solid #dce4ef;border-radius:8px;padding:11px 12px;background:white;color:#17243b;min-width:150px}
+button.action{background:#0878d1;color:white;border:0;padding:11px 16px;border-radius:8px;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:12px;border-bottom:1px solid #edf1f6}
+th{color:#71819a;background:#f8fafd}
+.table-wrap{overflow:auto}
+.pill{padding:5px 9px;border-radius:20px;background:#eef4fc;font-size:11px}
+.loading{padding:14px;background:#fff7e5;color:#946200;border-radius:9px;margin:15px 0}
+.error{background:#fff0f0;color:#a52a2a;padding:14px;border-radius:9px;margin:15px 0}
+.footer{color:#8a98aa;font-size:12px;text-align:center;padding:30px}
+@media(max-width:900px){.sidebar{width:190px}.main{margin-left:190px;padding:20px}.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.sidebar{position:static;width:100%;height:auto}.brand{padding-bottom:10px}.nav{display:flex;overflow:auto}.nav-label{display:none}.nav button{white-space:nowrap;width:auto}.main{margin:0;padding:16px}.grid,.panel-grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
-<header>
-<h1>SaaS Customer Churn & Retention Analytics</h1>
-<p>Customer Churn | Retention | Subscription Performance | Revenue Intelligence</p>
-<p>Business Intelligence Project using Microsoft Power BI</p>
-</header>
+<aside class="sidebar">
+  <div class="brand">SaaS <span>INTELLIGENCE</span></div>
+  <div class="nav-label">Workspace</div>
+  <nav class="nav">
+    <button class="active" data-page="overview">▦ &nbsp; Dashboard</button>
+    <button data-page="customers">♙ &nbsp; Customer Explorer</button>
+    <button data-page="churn">↗ &nbsp; Churn Analysis</button>
+    <button data-page="revenue">▤ &nbsp; Revenue Analytics</button>
+  </nav>
+  <div class="nav-label">Project</div>
+  <nav class="nav">
+    <button data-page="about">ⓘ &nbsp; About Project</button>
+  </nav>
+</aside>
 
-<main>
-<section>
-<h2>Project Overview</h2>
-<p>An end-to-end Business Intelligence project analyzing 10,000 SaaS customer records to understand churn behavior, customer retention, subscription performance and recurring revenue.</p>
-</section>
+<main class="main">
+  <div class="topbar">
+    <div>
+      <h1 id="pageTitle">Executive Dashboard</h1>
+      <div class="muted">SaaS Customer Churn & Retention Intelligence</div>
+    </div>
+    <div class="status" id="dataStatus">Loading project data...</div>
+  </div>
 
-<section>
-<h2>Key Performance Indicators</h2>
-<div class="grid">
-<div class="kpi"><span>Total Customers</span><h3>10,000</h3></div>
-<div class="kpi"><span>Churned Customers</span><h3>597</h3></div>
-<div class="kpi"><span>Churn Rate</span><h3>5.97%</h3></div>
-<div class="kpi"><span>Active MRR</span><h3>410K</h3></div>
-<div class="kpi"><span>Churned MRR</span><h3>23K</h3></div>
-</div>
-</section>
+  <div id="loadMessage" class="loading">Connecting to your GitHub CSV datasets...</div>
 
-<section>
-<h2>Dashboard Pages</h2>
-<ol class="pages">
-<li>Executive Overview</li>
-<li>Retention Analysis</li>
-<li>Customer Risk Analysis</li>
-<li>Revenue Analysis</li>
-</ol>
-</section>
+  <section class="page active" id="overview">
+    <div class="filters">
+      <select id="countryFilter"><option value="">All countries</option></select>
+      <select id="planFilter"><option value="">All plans</option></select>
+      <button class="action" onclick="resetFilters()">Reset filters</button>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="kpi-label">Total Customers</div><div class="kpi-value" id="totalCustomers">—</div></div>
+      <div class="card"><div class="kpi-label">Churned Customers</div><div class="kpi-value" id="churnedCustomers">—</div></div>
+      <div class="card"><div class="kpi-label">Churn Rate</div><div class="kpi-value" id="churnRate">—</div></div>
+      <div class="card"><div class="kpi-label">Active MRR</div><div class="kpi-value" id="activeMrr">—</div></div>
+    </div>
+    <div class="panel-grid">
+      <div class="panel"><h3>Customer Distribution by Plan</h3><div class="chart-wrap"><canvas id="planChart"></canvas></div></div>
+      <div class="panel"><h3>Churn Reasons</h3><div class="chart-wrap"><canvas id="reasonChart"></canvas></div></div>
+    </div>
+  </section>
 
-<section>
-<h2>Tools & Technologies</h2>
-<p>Microsoft Power BI | DAX | Power Query | Excel | CSV</p>
-</section>
+  <section class="page" id="customers">
+    <div class="panel">
+      <h3>Customer Explorer</h3>
+      <div class="filters">
+        <input id="customerSearch" placeholder="Search customer ID..." />
+        <select id="customerPlan"><option value="">All plans</option></select>
+        <select id="customerCountry"><option value="">All countries</option></select>
+      </div>
+      <div class="muted" id="customerCount"></div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Customer ID</th><th>Country</th><th>Industry</th><th>Plan</th><th>Status</th><th>MRR</th></tr></thead><tbody id="customerRows"></tbody></table>
+      </div>
+    </div>
+  </section>
 
-<section>
-<h2>Project Dataset</h2>
-<p>Five datasets covering customers, churn, subscriptions, usage and support.</p>
-</section>
+  <section class="page" id="churn">
+    <div class="grid">
+      <div class="card"><div class="kpi-label">Churned Customers</div><div class="kpi-value" id="riskChurned">—</div></div>
+      <div class="card"><div class="kpi-label">Churn Rate</div><div class="kpi-value" id="riskRate">—</div></div>
+      <div class="card"><div class="kpi-label">Payment Failures</div><div class="kpi-value" id="paymentFailures">—</div></div>
+      <div class="card"><div class="kpi-label">Support Tickets</div><div class="kpi-value" id="supportTickets">—</div></div>
+    </div>
+    <div class="panel-grid">
+      <div class="panel"><h3>Churn by Reason</h3><div class="chart-wrap"><canvas id="churnReasonChart"></canvas></div></div>
+      <div class="panel"><h3>Churn by Subscription Plan</h3><div class="chart-wrap"><canvas id="churnPlanChart"></canvas></div></div>
+    </div>
+  </section>
 
-<section>
-<h2>Explore the Power BI Report</h2>
-<p>Download the Power BI file and open it using Power BI Desktop.</p>
-<a class="download" href="saasretentionproject.pbix" download>Download Power BI Report</a>
-</section>
+  <section class="page" id="revenue">
+    <div class="grid">
+      <div class="card"><div class="kpi-label">Active MRR</div><div class="kpi-value" id="revActive">—</div></div>
+      <div class="card"><div class="kpi-label">Churned MRR</div><div class="kpi-value" id="revChurned">—</div></div>
+      <div class="card"><div class="kpi-label">Combined MRR</div><div class="kpi-value" id="revTotal">—</div></div>
+      <div class="card"><div class="kpi-label">Subscriptions</div><div class="kpi-value" id="revSubs">—</div></div>
+    </div>
+    <div class="panel-grid">
+      <div class="panel"><h3>MRR by Plan</h3><div class="chart-wrap"><canvas id="mrrPlanChart"></canvas></div></div>
+      <div class="panel"><h3>Subscription Status</h3><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div>
+    </div>
+  </section>
+
+  <section class="page" id="about">
+    <div class="panel">
+      <h2>About this project</h2>
+      <p>This interactive analytics platform explores SaaS customer churn, customer retention, subscription performance and recurring revenue.</p>
+      <h3>Project modules</h3>
+      <p>• Executive Dashboard</p><p>• Customer Explorer</p><p>• Churn Analysis</p><p>• Revenue Analytics</p>
+      <h3>Technology</h3>
+      <p>Microsoft Power BI, HTML, CSS, JavaScript, Chart.js and CSV datasets.</p>
+      <h3>Data sources</h3>
+      <p>Customers, churn, subscriptions, support and usage datasets hosted in this GitHub repository.</p>
+    </div>
+  </section>
+  <div class="footer">SaaS Intelligence Platform · Portfolio Project</div>
 </main>
 
-<footer>
-<p>Created by Sakshi Sharma | SaaS Customer Churn & Retention Analytics</p>
-</footer>
+<script>
+const base = "https://raw.githubusercontent.com/Satakshi2405/saas-customer-churn-retention-analytics/main/SaaS_Retention_Fresh_Dataset_ALL_FILES%20(1)/";
+const files = ["customers.csv","churn.csv","subscriptions.csv","support.csv","usage.csv"];
+let data = {customers:[],churn:[],subscriptions:[],support:[],usage:[]};
+let charts = {};
+
+const clean = v => String(v ?? "").trim();
+const key = v => clean(v).toLowerCase().replace(/[\s_-]/g,"");
+const get = (row, name) => {
+  const wanted = key(name);
+  const found = Object.keys(row || {}).find(k => key(k) === wanted);
+  return found ? row[found] : "";
+};
+const num = v => Number(String(v ?? "").replace(/[^0-9.-]/g,"")) || 0;
+const money = n => new Intl.NumberFormat("en-IN",{maximumFractionDigits:0}).format(n);
+const isChurned = v => ["yes","true","churned","1"].includes(clean(v).toLowerCase());
+
+function loadCSV(file){
+  return new Promise((resolve,reject)=>{
+    Papa.parse(base+file,{
+      download:true,header:true,skipEmptyLines:true,
+      complete:r=>r.errors.length && !r.data.length ? reject(r.errors[0]) : resolve(r.data),
+      error:reject
+    });
+  });
+}
+function showError(message){
+  document.getElementById("loadMessage").className="error";
+  document.getElementById("loadMessage").textContent=message;
+  document.getElementById("dataStatus").textContent="Data connection issue";
+}
+function chart(id,type,labels,values,label){
+  if(charts[id]) charts[id].destroy();
+  const el=document.getElementById(id);
+  if(!el)return;
+  charts[id]=new Chart(el,{
+    type,
+    data:{labels,datasets:[{label,data:values,backgroundColor:["#1685d5","#55b4a5","#f4b544","#ed7777","#8b83d8","#7b9bbd"],borderRadius:6,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:type==="doughnut"||type==="pie"}}}
+  });
+}
+function joinedCustomers(){
+  return data.customers.map(c=>{
+    const id=clean(get(c,"customer_id"));
+    const sub=data.subscriptions.find(s=>clean(get(s,"customer_id"))===id)||{};
+    const churn=data.churn.find(s=>clean(get(s,"customer_id"))===id)||{};
+    return {...c,_id:id,_plan:get(c,"plan"),_country:get(c,"country"),_industry:get(c,"industry"),_status:get(sub,"status")||get(churn,"churn_status"),_mrr:num(get(sub,"mrr")),_reason:get(churn,"churn_reason"),_failures:num(get(churn,"payment_failures"))};
+  });
+}
+function selectedCustomers(){
+  const country=document.getElementById("countryFilter")?.value||"";
+  const plan=document.getElementById("planFilter")?.value||"";
+  return joinedCustomers().filter(c=>(!country||c._country===country)&&(!plan||c._plan===plan));
+}
+function fillSelect(id,values){
+  const el=document.getElementById(id); if(!el)return;
+  const old=el.value;
+  [...new Set(values.map(clean).filter(Boolean))].sort().forEach(v=>{
+    if(![...el.options].some(o=>o.value===v))el.add(new Option(v,v));
+  });
+  el.value=old;
+}
+function updateDashboard(){
+  const rows=selectedCustomers();
+  const churned=rows.filter(c=>isChurned(c._status)||isChurned(get(c,"churn_status")));
+  const active=rows.filter(c=>clean(c._status).toLowerCase()==="active");
+  const activeMrr=active.reduce((a,c)=>a+c._mrr,0);
+  document.getElementById("totalCustomers").textContent=money(rows.length);
+  document.getElementById("churnedCustomers").textContent=money(churned.length);
+  document.getElementById("churnRate").textContent=(rows.length?churned.length/rows.length*100:0).toFixed(2)+"%";
+  document.getElementById("activeMrr").textContent=money(activeMrr);
+  const plans=[...new Set(rows.map(c=>c._plan).filter(Boolean))];
+  chart("planChart","bar",plans,plans.map(p=>rows.filter(c=>c._plan===p).length),"Customers");
+  const reasons=[...new Set(churned.map(c=>c._reason).filter(Boolean))];
+  chart("reasonChart","doughnut",reasons,reasons.map(r=>churned.filter(c=>c._reason===r).length),"Churned");
+  document.getElementById("riskChurned").textContent=money(churned.length);
+  document.getElementById("riskRate").textContent=(rows.length?churned.length/rows.length*100:0).toFixed(2)+"%";
+  document.getElementById("paymentFailures").textContent=money(data.churn.reduce((a,c)=>a+num(get(c,"payment_failures")),0));
+  document.getElementById("supportTickets").textContent=money(data.support.reduce((a,c)=>a+num(get(c,"tickets")),0));
+  const churnPlans=[...new Set(churned.map(c=>c._plan).filter(Boolean))];
+  chart("churnReasonChart","bar",reasons,reasons.map(r=>churned.filter(c=>c._reason===r).length),"Customers");
+  chart("churnPlanChart","bar",churnPlans,churnPlans.map(p=>churned.filter(c=>c._plan===p).length),"Churned");
+  const allSubs=data.subscriptions;
+  const activeSubs=allSubs.filter(s=>clean(get(s,"status")).toLowerCase()==="active");
+  const churnSubs=allSubs.filter(s=>clean(get(s,"status")).toLowerCase()==="churned");
+  const activeRevenue=activeSubs.reduce((a,s)=>a+num(get(s,"mrr")),0);
+  const churnRevenue=churnSubs.reduce((a,s)=>a+num(get(s,"mrr")),0);
+  document.getElementById("revActive").textContent=money(activeRevenue);
+  document.getElementById("revChurned").textContent=money(churnRevenue);
+  document.getElementById("revTotal").textContent=money(activeRevenue+churnRevenue);
+  document.getElementById("revSubs").textContent=money(allSubs.length);
+  chart("statusChart","doughnut",["Active","Churned"],[activeSubs.length,churnSubs.length],"Subscriptions");
+  chart("mrrPlanChart","bar",plans,plans.map(p=>allSubs.filter(s=>{
+    const customer=rows.find(c=>c._id===clean(get(s,"customer_id")));
+    return customer && customer._plan===p;
+  }).reduce((a,s)=>a+num(get(s,"mrr")),0)),"MRR");
+}
+function renderCustomers(){
+  const search=document.getElementById("customerSearch").value.toLowerCase();
+  const plan=document.getElementById("customerPlan").value;
+  const country=document.getElementById("customerCountry").value;
+  const rows=joinedCustomers().filter(c=>
+    c._id.toLowerCase().includes(search)&&(!plan||c._plan===plan)&&(!country||c._country===country)
+  );
+  document.getElementById("customerCount").textContent=rows.length+" customers found";
+  document.getElementById("customerRows").innerHTML=rows.slice(0,200).map(c=>
+    `<tr><td>${c._id}</td><td>${c._country||"—"}</td><td>${c._industry||"—"}</td><td>${c._plan||"—"}</td><td><span class="pill">${c._status||"Unknown"}</span></td><td>${money(c._mrr)}</td></tr>`
+  ).join("");
+}
+function resetFilters(){
+  document.getElementById("countryFilter").value="";
+  document.getElementById("planFilter").value="";
+  updateDashboard();
+}
+document.querySelectorAll("[data-page]").forEach(btn=>btn.addEventListener("click",()=>{
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll("[data-page]").forEach(b=>b.classList.remove("active"));
+  document.getElementById(btn.dataset.page).classList.add("active");
+  btn.classList.add("active");
+  const titles={overview:"Executive Dashboard",customers:"Customer Explorer",churn:"Churn Analysis",revenue:"Revenue Analytics",about:"About Project"};
+  document.getElementById("pageTitle").textContent=titles[btn.dataset.page];
+  if(btn.dataset.page==="customers")renderCustomers();
+}));
+document.getElementById("countryFilter").addEventListener("change",updateDashboard);
+document.getElementById("planFilter").addEventListener("change",updateDashboard);
+["customerSearch","customerPlan","customerCountry"].forEach(id=>document.getElementById(id).addEventListener("input",renderCustomers));
+(async()=>{
+  try{
+    const results=await Promise.all(files.map(loadCSV));
+    [data.customers,data.churn,data.subscriptions,data.support,data.usage]=results;
+    fillSelect("countryFilter",data.customers.map(c=>get(c,"country")));
+    fillSelect("planFilter",data.customers.map(c=>get(c,"plan")));
+    fillSelect("customerPlan",data.customers.map(c=>get(c,"plan")));
+    fillSelect("customerCountry",data.customers.map(c=>get(c,"country")));
+    document.getElementById("loadMessage").style.display="none";
+    document.getElementById("dataStatus").textContent="● Live CSV data loaded";
+    updateDashboard();
+    renderCustomers();
+  }catch(e){
+    showError("Could not load the CSV files. Please check that the five CSV files are uploaded in the expected GitHub folder. Details: "+e.message);
+  }
+})();
+</script>
 </body>
 </html>
